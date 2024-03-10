@@ -20,16 +20,19 @@ compile = $(cc) $(flags) -c -o
 
 all: client server
 
-client : client.o
+client : client.o domain_socket.o
 	$(link) $@ $^
 
-client.o : client.cc
+client.o : client.cc client.h
 	$(compile) $@ $<
 
-server: server.o
-$(link) $@ $^
+server: server.o domain_socket.o
+	$(link) $@ $^
 
-server.o : server.cc
+server.o : server.cc server.h
+	$(compile) $@ $<
+
+domain_socket.o: domain_socket.cc domain_socket.h
 	$(compile) $@ $<
 
 clean: 
