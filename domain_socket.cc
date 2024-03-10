@@ -67,6 +67,7 @@ bool DomainSocket::Connect() const {
 }
 
 ::ssize_t DomainSocket::Read(std::vector<std::string>* finaloutput, std::string* output, int socket_fd, std::size_t byte_count, char eot) const {
+  std::cout << "entering first Read" << std::endl;
   if (!socket_fd) {
     socket_fd = socket_fd_;
   }
@@ -82,6 +83,7 @@ bool DomainSocket::Connect() const {
 
   while (buffer[bytes_read -1] != eot
          || (byte_count && static_cast<std::size_t>(bytes_read) < byte_count)) {
+    std::cout << "ENTERED WHILE LOOP" << std::endl;
     output->insert(output->size(), buffer, bytes_read);
     bytes_read = Read(socket_fd, buffer, byte_count ? byte_count - total_bytes_read : kBufferSize);
 
@@ -89,7 +91,7 @@ bool DomainSocket::Connect() const {
       return total_bytes_read;
     }
     total_bytes_read += bytes_read;
-  }
+  } //end while loop
   output->insert(output->size(), buffer, byte_count ? bytes_read : bytes_read - 1);
   
   std::string toBeAdded;

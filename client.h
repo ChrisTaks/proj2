@@ -18,6 +18,19 @@ class DomainSocketClient : public DomainSocket {
     using DomainSocket::DomainSocket;
 
     void Run(int argc, char *argv[]);
+
+    double AddNumbers(double a, double b);
+
+    double SubtractNumbers(double a, double b);
+
+    double MultiplyNumbers(double a, double b);
+
+    double DivideNumbers(double a, double b);
+
+    bool IsOperator(std::string arg);
+
+    std::string processEquation(std::string line);
+
 };
 
 #endif  // _PROJ2_CLIENT_H_

@@ -45,13 +45,15 @@ void DomainSocketServer::Run() {
     while (true) {
       std::string msg;
      ::ssize_t bytes_read = Read(&theArgs, &msg, socket_fd);
+     std::cout << "theArgs size: " << theArgs.size() << std::endl;
+     std::cout << "bytes_read :" << bytes_read << std::endl;
 
      if (bytes_read < 0) {
        std::cerr << "Server shutting down..." << std::endl;
        exit(0);
-     } else if (!bytes_read) {
+     } else if (bytes_read) {
         std::cout << "reading done" << std::endl;
-        close(socket_fd);
+        //close(socket_fd);
         break;
       }
     final_bytes = bytes_read;
@@ -85,14 +87,7 @@ void DomainSocketServer::Run() {
       ++lineNumber;
       for (int line : lineNumbers) {
         if (line == lineNumber) {
-          std::string finishedLine = "line ";
-          finishedLine += std::to_string(line);
-          finishedLine += ": ";
-          finishedLine += equationLine;
-          finishedLine += " = ";
-          finishedLine += processEquation(equationLine);
-          finishedLine += kEoT;
-          finalLine.push_back(finishedLine);
+          finalLine.push_back(equationLine);
         }
       }
     }
