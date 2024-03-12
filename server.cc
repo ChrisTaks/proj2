@@ -29,35 +29,67 @@ void DomainSocketServer::Run() {
   std::cout << "MAX CLIENTS: " << get_nprocs_conf() << std::endl;
 
   while (true) {
-    std::vector<std::string> theArgs;
+    std::vector<std::string> badArgs;
     ssize_t final_bytes;
     //socket_fd = ::accept(socket_fd_, nullptr, nullptr);
-    if(Accept(&socket_fd)) {
-      std::cout << "ACCEPTED" << std::endl;
+    if(!Accept(&socket_fd)) {
+      std::cout << "CLIENT NOT ACCEPTED" << std::endl;
     }
-    std::cout << "SOCKET_FD read: " << socket_fd << std::endl;
+    //std::cout << "SOCKET_FD read: " << socket_fd << std::endl;
     if (socket_fd < 0) {
       std::cerr << "Socket connection: " << ::strerror(errno) << std::endl;
       continue;
     }
     std:: cout << "CLIENT CONNECTED" << std::endl;
 
+    std::string msg;
+    ssize_t oldBytes;
     while (true) {
-      std::string msg;
-     ::ssize_t bytes_read = Read(&theArgs, &msg, socket_fd);
-     std::cout << "theArgs size: " << theArgs.size() << std::endl;
-     std::cout << "bytes_read :" << bytes_read << std::endl;
+      //std::string msg;
+     ::ssize_t bytes_read = Read(&badArgs, &msg, socket_fd);
+     std::cout << "[WIDPIO]: theArgs size: " << badArgs.size() << std::endl;
+     std::cout << "[WIDPIO]: bytes_read :" << bytes_read << std::endl;
+     std::cout << "[WIDPIO]: msg: " << msg << std::endl;
+      if (msg[msg.size()-1] == kEoT) {
+        std::cout << "[WIDPIO]: end of transmission found " << msg[msg.size()-1] << std::endl;
+      } else {
+        std::cout << "[WIDPIO]: eot never found! " << msg[msg.size()-1] << std::endl;
+      }
 
      if (bytes_read < 0) {
        std::cerr << "Server shutting down..." << std::endl;
        exit(0);
      } else if (bytes_read) {
-        std::cout << "reading done" << std::endl;
+        std::cout << "[WIDPIO]: reading done" << std::endl;
         //close(socket_fd);
         break;
       }
+      oldBytes = bytes_read;
     final_bytes = bytes_read;
     }
+    //testing msg
+    std::vector<std::string> theArgs;
+    std::string toBeAdded;
+    for (size_t i = 0; i < msg.size(); ++i) {
+      //std::cout << "[WIDPIO]: msg[i]: " << msg[i] << std::endl;
+      if (msg[i] == kUS || msg[i] == kEoT && toBeAdded.size() > 0) {
+        //std::cout << "[WIDPIO]: toBeAdded (kEoT found): " << toBeAdded << std::endl;
+        theArgs.push_back(toBeAdded);
+        toBeAdded = "";
+      } else {
+        toBeAdded += msg[i];
+        //std::cout << "[WIDPIO]: toBeAdded + msg[i]" << toBeAdded << std::endl;
+      }
+    }
+    //theArgs.push_back(toBeAdded);  // final one
+    for (std::string line : theArgs) {
+      std::cout << "[WIDPIO]: theArg: " << line <<std::endl;
+    }
+
+
+    // for (std::string line : theArgs) {
+    //   std::cout << "[WIDPIO]: line recieved: " << line << std::endl;
+    // }
 
     std::vector<std::string> finalLine;
 
@@ -69,6 +101,7 @@ void DomainSocketServer::Run() {
     // sort line numbers
     std::vector<int> lineNumbers;
     for (size_t i = 1; i < theArgs.size(); ++i) {
+      std::cout << "pushing back: [" << theArgs[i] << "]" <<std::endl;
       lineNumbers.push_back(std::stoi(theArgs[i]));
     }
     std::sort(lineNumbers.begin(), lineNumbers.end());
@@ -93,18 +126,19 @@ void DomainSocketServer::Run() {
     }
     std::cout << "BYTES SENT: " << final_bytes << std::endl;
     equationFile.close();
+
+    std::string finalInput;
     for (std::string line : finalLine) {
       std::cout << line << std::endl;
+      finalInput += line;
+      finalInput += kUS;
     }
+    finalInput += kEoT;
     // send the data
-    // if(Accept(&socket_fd)) {
-    //   std::cout << "ACCEPTED" << std::endl;
-    // }
-    for (std::string line : finalLine) {
-      std::cout << "SOCKET_FD write: " << socket_fd << std::endl;
-      std::cout << "socket_fd_: " << socket_fd_ << std::endl;
-      //std::string testwrite("test write");
-      ::size_t bytes_wrote = Write(line, socket_fd);
+    ::size_t bytes_wrote = Write(finalInput, socket_fd);
+    //for (std::string line : finalLine) {
+      //std::cout << "[WIDPIO]: writing " << line << std::endl;
+      //::size_t bytes_wrote = Write(line, socket_fd);
 
       if (bytes_wrote < 0) {
         std::cerr << "Server terminating..." << std::endl;
@@ -113,7 +147,7 @@ void DomainSocketServer::Run() {
         std::cerr << "Client disconnected (during write)" << std::endl;
         exit(4);
       }
-    }
+    //}
     Close(socket_fd);
     //clears
     finalLine.clear();
@@ -121,87 +155,6 @@ void DomainSocketServer::Run() {
     
   } // end while loop
 }
-
-double DomainSocketServer::AddNumbers(double a, double b) {
-  return a + b;
-}
-
-double DomainSocketServer::SubtractNumbers(double a, double b) {
-  return a - b;
-}
-
-double DomainSocketServer::MultiplyNumbers(double a, double b) {
-  return a * b;
-}
-
-double DomainSocketServer::DivideNumbers(double a, double b) {
-  return a / b;
-}
-
-bool DomainSocketServer::IsOperator(std::string arg) {
-  return arg == "+" || arg == "-" || arg == "x" || arg == "/";
-}
-
-std::string DomainSocketServer::processEquation(std::string line) {
-  std::vector<double> numbers;
-  std::vector<std::string> operators;
-  // break up the string
-  std::vector<std::string> args;
-  std::string component;
-  for (char c : line) {
-    if (c != ' ') {
-      component += c;
-    } else {
-      args.push_back(component);
-      component = "";
-    }
-  }
-  args.push_back(component);
-  // for (std::string test : args) {
-  //   std::cout << "test: " << test << std::endl;
-  // }
-
-  // adding the args to their respective vectors
-  for (size_t i = 0; i < args.size(); ++i) {
-    if (IsOperator(args[i])) {
-      operators.push_back(args[i]);
-      if (operators.back() == "x" || operators.back() == "/") {
-        double a = numbers.back();
-        numbers.pop_back();
-        if (operators.back() == "x") {
-          numbers.push_back(MultiplyNumbers(a, std::stod(args[i+1])));
-        }
-        if (operators.back() == "/") {
-          numbers.push_back(DivideNumbers(a, std::stod(args[i+1])));
-        }
-        ++i;  // iterate past the next variable since it was already used
-      }
-    } else {
-      numbers.push_back(std::stod(args[i]));
-    }
-  }
-  // next, just add / subtract the remaining numbers
-  for (std::string& op : operators) {
-    if (op == "+") {
-      numbers[0] = AddNumbers(numbers[0], numbers[1]);
-      numbers.erase(numbers.begin()+1);
-    }
-    if (op == "-") {
-      numbers[0] = SubtractNumbers(numbers[0], numbers[1]);
-      numbers.erase(numbers.begin()+1);
-    }
-  }
-  //std::cout << numbers[0] << std::endl;
-  return std::to_string(static_cast<int>(numbers[0]));
-}
-
-
-// socket()
-// bind()
-// listen()
-// accept()
-// read()/write()
-// close()
 
 int main(int arc, char *argv[]) {
   DomainSocketServer dss(argv[1]);

@@ -15,10 +15,18 @@ void DomainSocketClient::Run(int argc, char *argv[]) {
     exit(2);
   }
   // send the data
+  std::string finalInput;
   for (int i = 2; i < argc; ++i) {
-    std::string input(argv[i]);
-    std::cout << input << std::endl;
-    ::size_t bytes_wrote = Write(input);
+    if (argv[i] != "") {
+      std::string input(argv[i]);
+      //input += kUS;
+      finalInput += input;
+      finalInput += kUS;
+    }
+  }
+  finalInput += kEoT;
+    std::cout << "[WIDPIO]: input: " << finalInput << std::endl;
+    ::size_t bytes_wrote = Write(finalInput);
 
     if (bytes_wrote < 0) {
       std::cerr << "Client terminating..." << std::endl;
@@ -27,30 +35,48 @@ void DomainSocketClient::Run(int argc, char *argv[]) {
       std::cerr << "Server disconnected" << std::endl;
       exit(4);
     }
-  }
+ // }  // end for loop
 
   // recieve the data
-  std::vector<std::string> theLines;
+  std::vector<std::string> theLinesOld;
   ssize_t final_bytes;
   std::string msg;
   
-  while (true) {
+ while (true) {
     std::cout << "attempting to read..." << std::endl;
-    std::cout << "socket_fd_: " << socket_fd_ << std::endl;
-    ::ssize_t bytes_read = Read(&theLines, &msg);
-    std::cout << "read succesfull" << std::endl;
+    //std::cout << "socket_fd_: " << socket_fd_ << std::endl;
+    ::ssize_t bytes_read = Read(&theLinesOld, &msg);
+    std::cout << "[WIDPIO]: theLines size: " << theLinesOld.size() << std::endl;
+    std::cout << "[WIDPIO]: byte_read: " << bytes_read << std::endl;
+    std::cout << "[WIDPIO]: msg" << msg << std::endl;
 
    if (bytes_read < 0) {
       std::cerr << "Server shutting down..." << std::endl;
       //exit(0);
-   } else if (!bytes_read) {
-      std::cout << "Client disconnected" << std::endl;
+   } else if (bytes_read) {
+      std::cout << "[WIDPIO]: no more to read" << std::endl;
       Close(socket_fd_);
       break;
    }
   }
   // print/process the data
-  std::cout << "printing and processing data..." << std::endl;
+  std::cout << "[WIDPIO]: printing and processing data..." << std::endl;
+  
+  std::vector<std::string> theLines;
+  std::string toBeAdded;
+  for (size_t i = 0; i < msg.size(); ++i) {
+    if (msg[i] == kUS || msg[i] == kEoT && toBeAdded.size() > 0) {
+      theLines.push_back(toBeAdded);
+      toBeAdded = "";
+    } else {
+      toBeAdded += msg[i];
+    }
+  }
+  std::cout << "[WIDPIO]: toBeAdded final: " << toBeAdded << std::endl;
+  for (std::string line : theLines) {
+    std::cout << "[WIDPIO]: recieved line: " << line << std::endl;
+  }
+
   int lineNumber = 0;
   for (std::string line : theLines) {
     ++lineNumber;

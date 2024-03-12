@@ -28,19 +28,6 @@ class DomainSocketServer : public DomainSocket {
     using ::DomainSocket::DomainSocket;
 
     void Run();
-
-    double AddNumbers(double a, double b);
-
-    double SubtractNumbers(double a, double b);
-
-    double MultiplyNumbers(double a, double b);
-
-    double DivideNumbers(double a, double b);
-
-    bool IsOperator(std::string arg);
-
-    std::string processEquation(std::string line);
-
 };
 
 #endif  // _SERVER_H_
