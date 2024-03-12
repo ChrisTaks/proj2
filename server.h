@@ -24,7 +24,7 @@
 const char kSocket_path[] = "socket_example";
 
 class DomainSocketServer : public DomainSocket {
-  public:
+ public:
     using ::DomainSocket::DomainSocket;
 
     void Run();

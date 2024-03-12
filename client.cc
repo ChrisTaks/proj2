@@ -3,6 +3,8 @@
 #include <proj2/client.h>
 
 #include <iostream>
+#include <vector>
+#include <string>
 
 void DomainSocketClient::Run(int argc, char *argv[]) {
   std::cout << "Client initializing..." << std::endl;
@@ -14,79 +16,72 @@ void DomainSocketClient::Run(int argc, char *argv[]) {
   if (!Connect()) {
     exit(2);
   }
+  std::cout << "SERVER CONNECTION ACCEPTED" << std::endl;
   // send the data
   std::string finalInput;
   for (int i = 2; i < argc; ++i) {
-    if (argv[i] != "") {
-      std::string input(argv[i]);
-      //input += kUS;
-      finalInput += input;
-      finalInput += kUS;
-    }
+    std::string input(argv[i]);
+    finalInput += input;
+    finalInput += kUS;
   }
   finalInput += kEoT;
-    std::cout << "[WIDPIO]: input: " << finalInput << std::endl;
-    ::size_t bytes_wrote = Write(finalInput);
+  ::size_t bytes_wrote = Write(finalInput);
 
-    if (bytes_wrote < 0) {
-      std::cerr << "Client terminating..." << std::endl;
-      exit(3);
-    } else if (bytes_wrote == 0) {
-      std::cerr << "Server disconnected" << std::endl;
-      exit(4);
-    }
- // }  // end for loop
+  if (bytes_wrote < 0) {
+    std::cerr << "Client terminating..." << std::endl;
+    exit(3);
+  } else if (bytes_wrote == 0) {
+    std::cerr << "Server disconnected" << std::endl;
+    exit(4);
+  }
 
   // recieve the data
-  std::vector<std::string> theLinesOld;
-  ssize_t final_bytes;
   std::string msg;
-  
- while (true) {
-    std::cout << "attempting to read..." << std::endl;
-    //std::cout << "socket_fd_: " << socket_fd_ << std::endl;
-    ::ssize_t bytes_read = Read(&theLinesOld, &msg);
-    std::cout << "[WIDPIO]: theLines size: " << theLinesOld.size() << std::endl;
-    std::cout << "[WIDPIO]: byte_read: " << bytes_read << std::endl;
-    std::cout << "[WIDPIO]: msg" << msg << std::endl;
 
-   if (bytes_read < 0) {
-      std::cerr << "Server shutting down..." << std::endl;
-      //exit(0);
-   } else if (bytes_read) {
-      std::cout << "[WIDPIO]: no more to read" << std::endl;
-      Close(socket_fd_);
-      break;
-   }
+  ::ssize_t bytes_read = Read(&msg);
+  std::cout << "BYTES RECEIVED: " << bytes_read << std::endl;
+  if (bytes_read < 0) {
+    std::cerr << "Server shutting down..." << std::endl;
+    exit(0);
+  } else if (bytes_read) {
+    Close(socket_fd_);
   }
+
+  ::size_t found = msg.find("INVALID");
+  if (found != std::string::npos) {
+    std::cout << "ERROR: " << msg << std::endl;
+    exit(1);
+  }
+
   // print/process the data
-  std::cout << "[WIDPIO]: printing and processing data..." << std::endl;
-  
   std::vector<std::string> theLines;
   std::string toBeAdded;
   for (size_t i = 0; i < msg.size(); ++i) {
-    if (msg[i] == kUS || msg[i] == kEoT && toBeAdded.size() > 0) {
+    if ((msg[i] == kUS || msg[i] == kEoT) && toBeAdded.size() > 0) {
       theLines.push_back(toBeAdded);
       toBeAdded = "";
     } else {
       toBeAdded += msg[i];
     }
   }
-  std::cout << "[WIDPIO]: toBeAdded final: " << toBeAdded << std::endl;
-  for (std::string line : theLines) {
-    std::cout << "[WIDPIO]: recieved line: " << line << std::endl;
+
+  // sort line numbers
+  std::vector<int> lineNumbers;
+  for (int i = 3; i < argc; ++i) {
+    lineNumbers.push_back(std::stoi(argv[i]));
   }
+  std::sort(lineNumbers.begin(), lineNumbers.end());
 
   int lineNumber = 0;
   for (std::string line : theLines) {
-    ++lineNumber;
-    std::string finishedLine = "line "; 
-    finishedLine += std::to_string(lineNumber);
+    std::string finishedLine = "line ";
+    finishedLine += std::to_string(lineNumbers[lineNumber]);
     finishedLine += ": ";
     finishedLine += line;
     finishedLine += " = ";
     finishedLine += processEquation(line);
     std::cout << finishedLine << std::endl;
+    ++lineNumber;
   }
 }
 
@@ -125,10 +120,6 @@ std::string DomainSocketClient::processEquation(std::string line) {
     }
   }
   args.push_back(component);
-  // for (std::string test : args) {
-  //   std::cout << "test: " << test << std::endl;
-  // }
-
   // adding the args to their respective vectors
   for (size_t i = 0; i < args.size(); ++i) {
     if (IsOperator(args[i])) {
@@ -159,7 +150,6 @@ std::string DomainSocketClient::processEquation(std::string line) {
       numbers.erase(numbers.begin()+1);
     }
   }
-  //std::cout << numbers[0] << std::endl;
   return std::to_string(static_cast<int>(numbers[0]));
 }
 

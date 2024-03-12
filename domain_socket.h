@@ -1,7 +1,7 @@
-//Copyright 2024 Chris Taks
+// Copyright 2024 Chris Taks
 
-#ifndef _DOMAIN_SOCKET_H_
-#define _DOMAIN_SOCKET_H_
+#ifndef _PROJ2_DOMAIN_SOCKET_H_
+#define _PROJ2_DOMAIN_SOCKET_H_
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -18,7 +18,7 @@
 #include <iostream>
 
 class DomainSocket {
-  public:
+ public:
     static const char kEoT = '\004';
 
     static const char kUS = '\037';
@@ -35,8 +35,7 @@ class DomainSocket {
 
     bool Connect() const;
 
-    ::ssize_t Read(std::vector<std::string>* finalbuffer,
-                   std::string* buffer,
+    ::ssize_t Read(std::string* buffer,
                    int socket_file_descriptor = 0,
                    std::size_t return_after_bytes = 0,
                    char end_of_transmission = DomainSocket::kEoT) const;
@@ -46,15 +45,15 @@ class DomainSocket {
                     char end_of_transmission = DomainSocket::kEoT) const;
 
     void Close(int socket_file_descriptor = 0) const;
-  
-  protected:
+
+ protected:
     int socket_fd_;
     ::sockaddr_un sock_addr_;
 
     std::string socket_path_;
 
-  private:
+ private:
     ssize_t Read(int socket_fd, char buffer[], std::size_t buffer_size) const;
 };
 
-#endif  // _DOMAIN_SOCKET_H_
+#endif  // _PROJ2_DOMAIN_SOCKET_H_

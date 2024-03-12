@@ -9,12 +9,13 @@
 #include <cstdlib>
 
 #include <string>
+#include <algorithm>
 #include <iostream>
 
 const char kSocket_path[] = "socket_example";
 
 class DomainSocketClient : public DomainSocket {
-  public:
+ public:
     using DomainSocket::DomainSocket;
 
     void Run(int argc, char *argv[]);
@@ -30,7 +31,6 @@ class DomainSocketClient : public DomainSocket {
     bool IsOperator(std::string arg);
 
     std::string processEquation(std::string line);
-
 };
 
 #endif  // _PROJ2_CLIENT_H_
